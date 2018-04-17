@@ -1,6 +1,7 @@
 
 import pycurl
 from io import BytesIO
+from urllib.parse import urlencode
 
 
 class CurlClient:
@@ -22,7 +23,19 @@ class CurlClient:
         c.close()
 
         body = buffer.getvalue()
-        # Body is a byte string.
-        # We have to know the encoding in order to print it to a text file
-        # such as standard output.
+        return status, body.decode('iso-8859-1')
+
+    def Post(self, url, data, headers=[]):
+        buffer = BytesIO()
+        c = pycurl.Curl()
+        c.setopt(c.URL, url)
+        c.setopt(c.WRITEDATA, buffer)
+        c.setopt(c.HTTPHEADER, self.statichttpheaders + headers)
+        postdata = urlencode(data)
+        c.setopt(c.POSTFIELDS, postdata)
+        c.perform
+        status = c.getinfo(pycurl.HTTP_CODE)
+        c.close()
+
+        body = buffer.getvalue()
         return status, body.decode('iso-8859-1')
