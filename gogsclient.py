@@ -13,8 +13,11 @@ class GogsClient:
         status, projectsJson = self.curlClient.Get(self.url + "user/repos")
         return json.loads(projectsJson)
         
-    def getAllProjectsForOwner(self, owner):
-        status, projectsJson = self.curlClient.Get(self.url + "user/{}/repos".format(owner))
+    def getAllProjectsForOwner(self, owner=None):
+        if owner is not None:
+            status, projectsJson = self.curlClient.Get(self.url + "orgs/{}/repos".format(owner))
+        else:
+            status, projectsJson = self.curlClient.Get(self.url + "user/repos")
         if status == 200:
             return json.loads(projectsJson)
         else:
@@ -32,7 +35,12 @@ class GogsClient:
         projectInfo = { "name": name,
                         "description" : description,
                         "private" : private}
+        projectInfoJson = json.dumps(projectInfo)
         if owner is not None:
-            status, returnJson = CurlClient.Post(self.url + "/org/{}/repos".format(owner), projectInfo)
+            status, returnJson = self.curlClient.Post(self.url + "org/{}/repos".format(owner), projectInfoJson)
         else:
-            status, returnJson = CurlClient.Post(self.url + "/user/repos", projectInfo)
+            status, returnJson = self.curlClient.Post(self.url + "user/repos", projectInfoJson)
+        if status == 201:
+            return True, json.loads(returnJson)
+        else:
+            return False, json.loads(returnJson)["message"]

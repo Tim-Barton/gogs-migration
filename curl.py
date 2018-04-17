@@ -30,10 +30,11 @@ class CurlClient:
         c = pycurl.Curl()
         c.setopt(c.URL, url)
         c.setopt(c.WRITEDATA, buffer)
-        c.setopt(c.HTTPHEADER, self.statichttpheaders + headers)
-        postdata = urlencode(data)
-        c.setopt(c.POSTFIELDS, postdata)
-        c.perform
+        c.setopt(c.HTTPHEADER, self.statichttpheaders + headers + ['Content-Type: application/json'])
+        c.setopt(c.POST, 1)
+        c.setopt(c.POSTFIELDS, data)
+        #c.setopt(c.VERBOSE, True)
+        c.perform()
         status = c.getinfo(pycurl.HTTP_CODE)
         c.close()
 
