@@ -11,7 +11,7 @@ class CurlClient:
     def addStaticHeader(self, header):
         self.statichttpheaders.append(header)
 
-    def curlGet(self, url, headers=[]):
+    def Get(self, url, headers=[]):
         buffer = BytesIO()
         c = pycurl.Curl()
         c.setopt(c.URL, url)
