@@ -4,6 +4,8 @@ import argparse
 import sys
 from gitlabclient import GitlabClient
 from gogsclient import GogsClient
+import os
+import git
 
 def gogsIsPrivate(public, visibility_level):
     if public:
@@ -14,7 +16,7 @@ def gogsIsPrivate(public, visibility_level):
         return True
 
 parser = argparse.ArgumentParser("Migrate projects (repos & Wikis) from Gitlab to Gogs")
-parser.add_argument('-glp', '--gitlabpat', help="The Personal Access Token (PAT) for the Gitlab user")
+parser.add_argument('-glp', '--gitlabpt', help="The Private Token for the Gitlab user")
 parser.add_argument('-gl', '--gitlaburl', help="The base url of the gitlab instance")
 parser.add_argument('-go', '--gogsurl', help="The base url of the gogs instance")
 parser.add_argument('-goo', '--gogsowner', help="The owner on gogs that all the projects to be migrated to")
@@ -46,13 +48,24 @@ migrateProjects = [project for project in gitlabProjects if project["name"] not 
 print("Starting Migration")
 for project in migrateProjects:
     print("Migrating {} as {}".format(project["name"], project["path"]))
-    success, data = gogs.createProject(project["path"], project["description"], gogsIsPrivate(project["public"], project["visibility_level"]), args.gogsowner)
+    success, gogsProject = gogs.createProject(project["path"], project["description"], gogsIsPrivate(project["public"], project["visibility_level"]), args.gogsowner)
     if not success:
-        print("Unable to create {}: {}\n".format(project["name"],data))
+        print("Unable to create {}: {}\n".format(project["name"],gogsProject))
         continue # skip any more processing if we can't create the project
     print("\tMigrating git repo")
     #migrate git repo
+    tempdir = args.tempdir + "/" + project["name"]
+    if not os.path.exists(tempdir):
+        os.mkdir(tempdir)
+    repo = git.Repo.clone_from(project["ssh_url_to_repo"], tempdir, bare=True)
+    
+    print(gogsProject["ssh_url"])
+    gogsRemote = repo.create_remote("Gogs", gogsProject["ssh_url"])
+    gogsRemote.push(None, None, mirror=True)
+    os.rmdir(tempdir)
+    print("\tMigrating issues - not yet implemented")
     #migrate issues
+    print("\tMigrating wiki - not yet implemented")
     #migrate wiki
     print("Migrated {} successfully\n".format(project["name"]))
     pass
